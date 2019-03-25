@@ -1,0 +1,165 @@
+## Gradle学习
+
+>gradle版本包装
+```
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.1'
+    archiveBase = ''
+    archivePath=''
+}
+```
+>依赖树
+```
+./gradlew 模块名：dependencies
+```
+
+>错误堆栈
+```
+gradlew -s
+```
+
+>强制刷新针对缓存清理
+```
+gradlew --refresh-dependencies assemble
+```
+
+>多任务调用  先清理后生成jar
+```
+gradlew clean jar
+```
+
+>访问list元素
+```
+task printList <<{
+    def numList=[1,2,3,4,5]
+    println(numList[1]) //访问第二个元素
+    println(numList[-1])//访问最后一个元素
+    println(numList[-2])//访问倒数第二个元素
+    println(numList[1..3]) //访问第二到四个元素
+    //循环遍历
+    numList.each {
+        println(it)
+    }
+}
+```
+
+>操作map
+```
+task printMap << {
+    def map = ['width': 125, 'height': 350]
+
+    //取指定key的值
+    println(map['width'])
+    println(map.width)
+
+    //循环遍历
+    map.each {
+        println("key:${it.key}  ,value:${it.value}")
+    }
+}
+```
+
+>自定义闭包
+```
+def eachClo(closure) {
+    for (int i in 1..10) {
+        closure(i)
+    }
+}
+
+task customEachTask << {
+    eachClo {
+        println(it)
+    }
+}
+
+```
+> 自定义map闭包传递参数     `gradlew -q customMapTask` 
+```
+def eachMap(closure) {
+    def map = ["name": "张三", "age": 18]
+    map.each {
+        closure(it.key, it.value)
+    }
+}
+
+task customMapTask << {
+    eachMap {
+        k, v ->
+            println("${k} is ${v}"
+            )
+    }
+}
+```
+
+>闭包委托  `thisObject`  `owner` `delegate`
+
+```
+class Delegate {
+    def method() {
+        println("Delegate  class : ${this.getClass()}")
+        println("method in Delegate")
+    }
+
+    def test(Closure<Delegate> closure) {
+        closure(this)
+    }
+}
+
+def method() {
+    println("context: ${this.getClass()} is root")
+    println(" method is root")
+}
+
+task proxyTask << {
+    new Delegate().test {
+        println("thisObject :${thisObject.getClass()}")
+        println("owner : ${owner.getClass()}")
+        println("delegate: ${delegate.getClass()}")
+        method()
+        it.method()
+    }
+}
+```
+>闭包委托输出   
+* 优先级： thisObject>owner>delegate    
+* delegate=owner      
+* thisObject=this
+```
+thisObject :class build_cdw506hk8z7smocwovupz3qlv
+owner : class build_cdw506hk8z7smocwovupz3qlv$_run_closure6
+delegate: class build_cdw506hk8z7smocwovupz3qlv$_run_closure6
+context: class build_cdw506hk8z7smocwovupz3qlv is root
+ method is root
+Delegate  class : class Delegate
+method in Delegate
+
+```
+
+>DSL委托配置  `delegate`
+```
+class Person {
+    String personName
+    int personAge
+
+    def dumpPerson() {
+        println("name: ${personName} ,age: ${personAge}")
+    }
+}
+
+def person(Closure<Person> closure) {
+    Person person = new Person()
+    closure.delegate = person
+    closure.setResolveStrategy(Closure.DELEGATE_FIRST)
+    closure(person)
+}
+
+task CustomDumpTask << {
+    person {
+        personName = "kylodw"
+        personAge = 23
+        dumpPerson()
+    }
+}
+
+```
