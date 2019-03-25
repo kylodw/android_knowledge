@@ -1,3 +1,3 @@
 # android_knowledge
 学习android
-www.baidu.com
+目录在wiki
